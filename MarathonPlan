@@ -1,0 +1,201 @@
+// For Version 1.2
+function calcTime(goalTime, calculationFactor , distanceCell) {
+
+  var goalTimeSeconds = dateToSeconds(goalTime);
+  var cellData = distanceCell.split(" ");
+  var distance = cellData[0];
+  var unit = cellData[1];
+  switch(unit){
+    case "m":
+      return calcTimeFromMeters(goalTimeSeconds, calculationFactor, distance);
+    case "km":
+      return calcTimeFromKilometers(goalTimeSeconds, calculationFactor, distance);
+    case "mi":
+      return calcTimeFromMiles(goalTimeSeconds, calculationFactor, distance);
+    default:
+      return unit;
+  }
+}
+
+// For Version 1.2
+function calcTime2(goalTime, calculationFactor , distanceCell) {
+
+  var goalTimeSeconds = dateToSeconds(goalTime);
+  var cellData = distanceCell.split(" ");
+  var distance = cellData[0];
+  var unit = cellData[1];
+  switch(unit){
+    case "m":
+      return calcTimeFromMeters(goalTimeSeconds, calculationFactor, distance);
+    case "km":
+      return calcTimeFromKilometers(goalTimeSeconds, calculationFactor, distance);
+    case "mi":
+      return calcTimeFromMiles2(goalTimeSeconds, calculationFactor, distance);
+    default:
+      return unit;
+  }
+}
+
+function dateToSeconds(date){
+  return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+}
+
+function calcTimeFromMeters(goalTime, calculationFactor, distance){
+  return calcTimeAll(goalTime, calculationFactor, distance, 42164.813);
+}
+
+function calcTimeFromKilometers(goalTime, calculationFactor, distance){
+  return calcTimeAll(goalTime, calculationFactor, distance, 42.164813);
+}
+
+function calcTimeFromMiles(goalTime, calculationFactor, distance) {
+  return calcTimeAll(goalTime, calculationFactor, distance, 26.2);
+}
+
+function calcTimeFromMiles2(goalTime, calculationFactor, distance) {
+  return calcTimeAll2(goalTime, calculationFactor, distance, 26.2);
+}
+
+function calcTimeAll(goalTime, calculationFactor, distance1, distance2) {
+  var seconds = Math.round(goalTime * Math.pow(distance1 / distance2, calculationFactor));
+  var hours = Math.floor(seconds / 3600);
+  var minutes = Math.floor(seconds / 60) - (hours * 60);
+  var seconds2 = seconds - (hours * 3600 + minutes * 60);
+  return new Date(0, 0, 0, hours, minutes, seconds2);
+ 
+}
+
+function calcTimeAll2(goalTime, calculationFactor, distance1, distance2) {
+  var seconds = Math.round(goalTime * Math.pow(distance1 / distance2, calculationFactor));
+  var hours = Math.floor(seconds / 3600);
+  var minutes = Math.floor(seconds / 60) - (hours * 60);
+  var seconds2 = seconds - (hours * 3600 + minutes * 60);
+  return hours + ":" + minutes + ":" + seconds2;
+ 
+}
+
+function calcPace(distanceCell, time, desiredUnit){
+  var distance = getDistance(distanceCell, desiredUnit);
+  var minutes = time.getHours() * 60 + time.getMinutes() + time.getSeconds() / 60;
+  var pace = minutes / distance;
+  //return minutes + "/" + distance+ "/" + pace;
+  var paceMinutesOnly = Math.floor(pace);
+  var paceSecondsOnly = Math.round((pace - paceMinutesOnly) * 60);
+  return new Date(0,0,0,0,paceMinutesOnly , paceSecondsOnly );
+}
+
+function calcSpeed(paceCell){
+  var minutes = paceCell.getHours() * 60 + paceCell.getMinutes() + paceCell.getSeconds() / 60;
+  return 60 / minutes;
+}
+
+function calcYasso800Time(goalTime) { 
+  var minutes = goalTime.getHours();
+  var seconds = goalTime.getMinutes() + goalTime.getSeconds() / 60;
+  return new Date(0,0,0,0, minutes, seconds);
+}
+
+function getDistance(distanceCell, desiredUnit){
+  var cellData = distanceCell.split(" ");
+  var distance = cellData[0];
+  var unit = cellData[1];
+
+  return convertDistance(distance, unit, desiredUnit);
+}
+
+function convertDistance(distance, fromUnit, toUnit){
+  switch(toUnit){
+    case "m":
+      switch(fromUnit){
+        case "km":
+          distance *= 1000.0;
+          break;
+        case "mi":
+          distance *= 1609.344;
+          break;
+      }
+      break;
+    case "km":
+      switch(fromUnit){
+        case "m":
+          distance /= 1000.0;
+          break;
+        case "mi":
+          distance *= 1.609344;
+          break;
+      }
+      break;
+    case "mi":
+      switch(fromUnit){
+        case "m":
+          distance /= 1609.344;
+          break;
+        case "km":
+          distance /= 1.609344;
+          break;
+      }
+      break;
+ 
+        }  
+  return distance;
+}
+
+function calcDay(marathonDate, weekNumber, dayNumber) {
+  var day = marathonDate.getDate() - (7 * (weekNumber - 1)) - (7 - dayNumber);
+  return new Date(marathonDate.getYear(), marathonDate.getMonth(), day);
+}
+
+function calcMiles(cells, distanceUnit){
+  var miles = 0.0;
+  for(var i=0; i < cells[0].length; i++){
+    miles += parseMiles(cells[0][i], distanceUnit);
+  }
+  return miles;
+}
+
+function formatRun(distance, paceCell, distanceUnit){
+  
+  var calculatedDistance = convertDistance(distance, "mi", distanceUnit);
+  var n = new Number(calculatedDistance);
+  return n.toFixed(2) + " " + distanceUnit + " @ " + Utilities.formatDate(paceCell, "GMT", "mm:ss") + " min/" + distanceUnit;
+}
+
+function formatInterval(count, distance, speedCell, paceCell, distanceUnit){
+  return count + "x" + distance + " @ " + speedCell.toString() + " " + distanceUnit +"/h [" + Utilities.formatDate(paceCell, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "mm:ss") + " min/" + distanceUnit + "]";
+}
+
+function getDataValue(range) {
+  return SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getSheetByName("Data")
+    .getRange(range)
+    .getValue();
+}
+
+function parseMiles(entry, distanceUnit){
+  var miles = 0.0;
+  var delimiter = " " + distanceUnit;
+  var lines = entry.split("\n");
+  for(var i = 0; i < lines.length; i++){
+    var distanceEntry = lines[i].split(" @")[0];
+    var tokens = distanceEntry.split(delimiter);
+    if (tokens.length > 1){
+      miles += new Number(tokens[0]);
+    }
+    else{
+      // These are intervals, so assume meters
+      var tokens2 = distanceEntry.split("x");
+      if (tokens2.length > 1){
+        var meters = tokens2[0];
+        for(var j = 1; j < tokens2.length; j++){
+          meters *= new Number(tokens2[j]);
+        }
+        miles += (meters / 1609.344);
+      }
+      
+    }
+  }
+  return miles;
+}
+
+
